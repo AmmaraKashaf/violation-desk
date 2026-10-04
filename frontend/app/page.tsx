@@ -6,6 +6,7 @@ import Inbox from "./components/Inbox";
 import NoticeForm from "./components/NoticeForm";
 import Timeline from "./components/Timeline";
 import { listVehicles, listViolations, resetDemo, type Vehicle, type Violation } from "./lib/api";
+import { TIMEZONE_CITY } from "./lib/display";
 
 export default function Home() {
   const [violations, setViolations] = useState<Violation[]>([]);
@@ -85,7 +86,7 @@ export default function Home() {
       </div>
 
       <footer className="mt-10 text-center text-xs text-slate-400">
-        Times shown in your local time. Payments are mocked.
+        Times shown in the operator&apos;s timezone ({TIMEZONE_CITY}). Payments are mocked.
       </footer>
     </main>
   );

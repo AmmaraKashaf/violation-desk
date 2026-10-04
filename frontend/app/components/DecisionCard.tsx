@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { resolveViolation, type ResolveAction, type Vehicle, type Violation } from "../lib/api";
 import {
-  DECISION_BADGE, DECISION_LABEL, OPERATOR_TIMEZONE, STATUS_LABEL, daysLeftText, deadlineBadge, formatDate, formatDateTime, money,
+  DECISION_BADGE, DECISION_LABEL, STATUS_LABEL, daysLeftText, deadlineBadge, formatDate, formatDateTime, money,
 } from "../lib/display";
+import TzLabel from "./TzLabel";
 
 type Props = {
   violation: Violation;
@@ -48,22 +49,20 @@ export default function DecisionCard({ violation, vehicle, onResolved }: Props) 
         {violation.vehicle_name && <span className="font-normal text-slate-500"> ({violation.vehicle_name})</span>}
       </h2>
       <p className="text-sm text-slate-500">
-        {formatDateTime(violation.occurred_at)} · {violation.location}
+        {formatDateTime(violation.occurred_at)}<TzLabel /> · {violation.location}
       </p>
 
       <p className="mt-4 text-base leading-relaxed text-slate-800">{violation.reason}</p>
-      {/* The reason is written in the operator's time; everything else on the page is in the viewer's time. */}
-      <p className="mt-1 text-xs text-slate-400">Times in this explanation are the operator&apos;s local time ({OPERATOR_TIMEZONE}).</p>
 
       {booking && (
         <dl className="mt-4 grid gap-x-6 gap-y-1 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-[auto_1fr]">
           <dt className="text-slate-500">Renter</dt>
           <dd className="font-medium">{booking.renter_name}</dd>
           <dt className="text-slate-500">Scheduled</dt>
-          <dd>{formatDateTime(booking.start_at)} → {formatDateTime(booking.end_at)}</dd>
+          <dd>{formatDateTime(booking.start_at)} → {formatDateTime(booking.end_at)}<TzLabel /></dd>
           <dt className="text-slate-500">Actually returned</dt>
           <dd className={violation.late_return ? "font-medium text-orange-700" : ""}>
-            {booking.actual_return_at ? formatDateTime(booking.actual_return_at) : "Not returned yet"}
+            {booking.actual_return_at ? <>{formatDateTime(booking.actual_return_at)}<TzLabel /></> : "Not returned yet"}
           </dd>
         </dl>
       )}

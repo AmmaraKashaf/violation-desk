@@ -1,7 +1,8 @@
 "use client";
 
 import type { Violation } from "../lib/api";
-import { DECISION_BADGE, DECISION_LABEL, STATUS_LABEL, daysLeftText, deadlineBadge, money } from "../lib/display";
+import { DECISION_BADGE, DECISION_LABEL, STATUS_LABEL, daysLeftText, deadlineBadge, formatDateTime, money } from "../lib/display";
+import TzLabel from "./TzLabel";
 
 type Props = { violations: Violation[]; selectedId: string | null; onSelect: (id: string) => void };
 
@@ -40,7 +41,10 @@ export default function Inbox({ violations, selectedId, onSelect }: Props) {
                   <span className="truncate font-medium">{v.violation} · {v.plate}</span>
                   <span className="shrink-0 text-slate-600">{money(v.amount)}</span>
                 </div>
-                {v.renter_name && <p className="mt-0.5 text-xs text-slate-500">{v.renter_name}</p>}
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {formatDateTime(v.occurred_at)}<TzLabel />
+                  {v.renter_name && ` · ${v.renter_name}`}
+                </p>
               </button>
             </li>
           );

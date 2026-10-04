@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import type { Booking, Vehicle, Violation } from "../lib/api";
-import { DECISION_LABEL, DECISION_PIN, formatDateTime } from "../lib/display";
+import {
+  DECISION_LABEL, DECISION_PIN, formatDateTime, formatDateTimeTz, formatDay, formatTime, startOfNextOperatorDay, startOfOperatorDay,
+} from "../lib/display";
+import TzLabel from "./TzLabel";
 
 const DAYS_SHOWN = 14;
 const HOUR_MS = 60 * 60 * 1000;
@@ -13,16 +16,21 @@ type Range = { start: number; end: number };
 type Props = { vehicle: Vehicle; violations: Violation[]; selectedId: string | null };
 
 // "14 days": the last 14 days up to the end of today. "Ticket day": the selected ticket's day,
-// zoomed in so a few hours of late return are easy to see. Browser local time.
+// zoomed in so a few hours of late return are easy to see. Days are the operator's days.
 function visibleRange(now: number, ticketAt: string | null, zoomed: boolean): Range {
   if (zoomed && ticketAt) {
-    const ticketDay = new Date(ticketAt);
-    ticketDay.setHours(0, 0, 0, 0);
-    return { start: ticketDay.getTime(), end: ticketDay.getTime() + DAY_MS };
+    const ticketTime = new Date(ticketAt).getTime();
+    return { start: startOfOperatorDay(ticketTime), end: startOfNextOperatorDay(ticketTime) };
   }
-  const endOfToday = new Date(now);
-  endOfToday.setHours(24, 0, 0, 0);
-  return { start: endOfToday.getTime() - DAYS_SHOWN * DAY_MS, end: endOfToday.getTime() };
+  const end = startOfNextOperatorDay(now);
+  return { start: startOfOperatorDay(end - DAYS_SHOWN * DAY_MS + 12 * HOUR_MS), end };
+}
+
+// One tick per operator midnight (14-day view) or every 3 hours from midnight (ticket day).
+function tickTimes(range: Range, zoomed: boolean): number[] {
+  const ticks: number[] = [];
+  for (let t = range.start; t < range.end; t = zoomed ? t + 3 * HOUR_MS : startOfNextOperatorDay(t)) ticks.push(t);
+  return ticks;
 }
 
 function toPercent(iso: string | number, range: Range): number {
@@ -48,7 +56,7 @@ function BookingBars({ booking, range }: { booking: Booking; range: Range }) {
   // Early return: the bar stops at the actual return. Late return: scheduled part plus an orange extension.
   const isLate = new Date(returned) > new Date(booking.end_at);
   const onTimeEnd = isLate ? booking.end_at : returned;
-  const span = `${formatDateTime(booking.start_at)} → ${formatDateTime(returned)}`;
+  const span = `${formatDateTime(booking.start_at)} → ${formatDateTimeTz(returned)}`;
   return (
     <>
       <Bar from={booking.start_at} to={onTimeEnd} range={range} label={booking.renter_name}
@@ -56,7 +64,7 @@ function BookingBars({ booking, range }: { booking: Booking; range: Range }) {
       {isLate && (
         <Bar from={booking.end_at} to={returned} range={range} className="rounded-r-lg bg-orange-500"
           style={{ backgroundImage: HATCH }}
-          title={`Late: due ${formatDateTime(booking.end_at)}, returned ${formatDateTime(returned)}`} />
+          title={`Late: due ${formatDateTimeTz(booking.end_at)}, returned ${formatDateTimeTz(returned)}`} />
       )}
     </>
   );
@@ -71,11 +79,8 @@ export default function Timeline({ vehicle, violations, selectedId }: Props) {
 
   const live = vehicle.bookings.filter((b) => b.status !== "cancelled");
   const cancelled = vehicle.bookings.filter((b) => b.status === "cancelled");
-  const tickMs = zoomed ? 3 * HOUR_MS : DAY_MS;
-  const ticks = Array.from({ length: Math.round((range.end - range.start) / tickMs) }, (_, i) => range.start + i * tickMs);
-  const tickLabel = (t: number) => zoomed
-    ? new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-    : new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const ticks = tickTimes(range, zoomed);
+  const tickLabel = (t: number) => zoomed ? formatTime(t) : formatDay(t);
   const nowPercent = toPercent(now, range);
 
   return (
@@ -84,7 +89,7 @@ export default function Timeline({ vehicle, violations, selectedId }: Props) {
         <div>
           <h2 className="text-lg font-semibold">Who had the {vehicle.name}?</h2>
           <p className="text-sm text-slate-500">
-            {vehicle.plate} · {zoomed && selected ? new Date(range.start).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : `last ${DAYS_SHOWN} days`}
+            {vehicle.plate} · {zoomed && selected ? <>{formatDay(range.start, true)}<TzLabel /></> : <>last {DAYS_SHOWN} days<TzLabel /></>}
           </p>
         </div>
         <div className="flex rounded-lg bg-slate-100 p-0.5 text-sm">
@@ -134,13 +139,13 @@ export default function Timeline({ vehicle, violations, selectedId }: Props) {
           return (
             <div key={pin.id} className="absolute -top-1 bottom-0 flex -translate-x-1/2 flex-col items-center" style={{ left: `${left}%` }}>
               <span
-                title={`${pin.violation} · ${formatDateTime(pin.occurred_at)} · ${DECISION_LABEL[pin.decision]}`}
+                title={`${pin.violation} · ${formatDateTimeTz(pin.occurred_at)} · ${DECISION_LABEL[pin.decision]}`}
                 className={`rounded-full ring-2 ring-white ${DECISION_PIN[pin.decision]} ${isSelected ? "h-4 w-4" : "h-3 w-3"}`}
               />
               <span className={`w-0.5 flex-1 ${DECISION_PIN[pin.decision]} ${isSelected ? "" : "opacity-50"}`} />
               {isSelected && (
                 <span className="mt-1 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] text-white">
-                  {formatDateTime(pin.occurred_at)}
+                  {formatDateTime(pin.occurred_at)}<TzLabel className="text-slate-300" />
                 </span>
               )}
             </div>
