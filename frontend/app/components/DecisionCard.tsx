@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { resolveViolation, type ResolveAction, type Vehicle, type Violation } from "../lib/api";
 import {
-  DECISION_BADGE, DECISION_LABEL, STATUS_LABEL, daysLeftText, deadlineBadge, formatDate, formatDateTime, money,
+  DECISION_BADGE, DECISION_LABEL, OPERATOR_TIMEZONE, STATUS_LABEL, daysLeftText, deadlineBadge, formatDate, formatDateTime, money,
 } from "../lib/display";
 
 type Props = {
@@ -52,6 +52,8 @@ export default function DecisionCard({ violation, vehicle, onResolved }: Props) 
       </p>
 
       <p className="mt-4 text-base leading-relaxed text-slate-800">{violation.reason}</p>
+      {/* The reason is written in the operator's time; everything else on the page is in the viewer's time. */}
+      <p className="mt-1 text-xs text-slate-400">Times in this explanation are the operator&apos;s local time ({OPERATOR_TIMEZONE}).</p>
 
       {booking && (
         <dl className="mt-4 grid gap-x-6 gap-y-1 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-[auto_1fr]">

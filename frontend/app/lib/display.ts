@@ -2,8 +2,9 @@
 
 import type { Decision, ViolationStatus } from "./api";
 
-// Same value as URGENT_DAYS in backend/app/config.py.
+// Same values as URGENT_DAYS and OPERATOR_TIMEZONE in backend/app/config.py.
 export const URGENT_DAYS = 5;
+export const OPERATOR_TIMEZONE = "America/New_York";
 const SOON_DAYS = 14;
 
 export const DECISION_LABEL: Record<Decision, string> = {

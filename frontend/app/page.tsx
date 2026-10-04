@@ -72,7 +72,7 @@ export default function Home() {
         <div className="space-y-6">
           <NoticeForm onSaved={handleChanged} />
           {selected && <DecisionCard key={selected.id} violation={selected} vehicle={vehicle} onResolved={handleChanged} />}
-          {selected && vehicle && <Timeline vehicle={vehicle} violations={violations} selectedId={selected.id} />}
+          {selected && vehicle && <Timeline key={`timeline-${selected.id}`} vehicle={vehicle} violations={violations} selectedId={selected.id} />}
           {selected && !vehicle && (
             <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
               No vehicle in your fleet has plate {selected.plate}, so there is no timeline to show.
